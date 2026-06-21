@@ -14,7 +14,7 @@ export const SubmitButton = () => {
       const formData = new FormData();
       formData.append('pipeline', JSON.stringify({ nodes, edges }));
 
-      const response = await fetch('https://vectorshift-workspace.onrender.com/pipelines/parse', {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/pipelines/parse`, {
         method: 'POST',
         body: formData,
       });
