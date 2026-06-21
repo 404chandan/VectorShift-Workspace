@@ -27,10 +27,6 @@ export const SubmitButton = () => {
       setResult(data);
       setModalOpen(true);
 
-      // Also trigger a standard window alert as requested by instructions
-      const dagText = data.is_dag ? 'is a Directed Acyclic Graph (DAG)' : 'contains cycles (is NOT a DAG)';
-      alert(`Pipeline Summary:\n- Nodes: ${data.num_nodes}\n- Edges: ${data.num_edges}\n- DAG Status: ${dagText}`);
-
     } catch (error) {
       console.error(error);
       alert('Error calling backend parser: ' + error.message);

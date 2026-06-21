@@ -11,6 +11,7 @@ export const BaseNode = ({
   children,
   style = {},
   className = '',
+  isConnectable = true,
 }) => {
   return (
     <div className={`base-node ${className}`} style={style}>
@@ -34,6 +35,7 @@ export const BaseNode = ({
             id={input.id}
             style={input.style}
             className={`custom-handle input-handle ${input.className || ''}`}
+            isConnectable={input.isConnectable !== undefined ? input.isConnectable : isConnectable}
           />
           {input.label && (
             <span className="handle-label input-label" style={input.labelStyle}>
@@ -52,6 +54,7 @@ export const BaseNode = ({
             id={output.id}
             style={output.style}
             className={`custom-handle output-handle ${output.className || ''}`}
+            isConnectable={output.isConnectable !== undefined ? output.isConnectable : isConnectable}
           />
           {output.label && (
             <span className="handle-label output-label" style={output.labelStyle}>

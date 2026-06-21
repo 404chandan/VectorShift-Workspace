@@ -1,127 +1,215 @@
 import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
 export const AnimatedBackground = () => {
-  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
+    // 1. Scene, Camera, and WebGLRenderer Setup
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
 
-    // Handle canvas dimensions resizing
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    const scene = new THREE.Scene();
+    
+    // Add fog to enhance depth perception
+    scene.fog = new THREE.FogExp2(0x030712, 0.0016);
+
+    const camera = new THREE.PerspectiveCamera(60, width / height, 1, 2000);
+    camera.position.z = 520;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // 2. Generate a circular glowing texture programmatically
+    const createCircleTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      gradient.addColorStop(0.2, 'rgba(165, 180, 252, 0.85)'); // Indigo core
+      gradient.addColorStop(0.6, 'rgba(99, 102, 241, 0.25)');  // Outer glow
+      gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 32, 32);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
     };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
 
-    // Compute count relative to window area
-    const particleCount = Math.min(65, Math.floor((canvas.width * canvas.height) / 18000));
-    const particles = [];
-    const connectionDistance = 110;
-    const mouse = { x: null, y: null, radius: 160 };
+    const particleTexture = createCircleTexture();
 
-    // Initialize particles
+    // 3. Create 3D Particle Cloud
+    const particleCount = 700;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    const colorIndigo = new THREE.Color('#6366f1');
+    const colorPurple = new THREE.Color('#a855f7');
+    const colorTeal = new THREE.Color('#14b8a6');
+
     for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        radius: Math.random() * 2 + 1,
-        color: i % 2 === 0 ? 'rgba(99, 102, 241, 0.35)' : 'rgba(168, 85, 247, 0.35)', // indigo / purple
-      });
+      // Distribute particles randomly inside a spherical shell
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = (Math.random() * 0.45 + 0.55) * 620; // Distance range
+
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+
+      // Color scheme distribution
+      let mixedColor;
+      const rng = Math.random();
+      if (rng < 0.45) {
+        mixedColor = colorIndigo.clone().lerp(colorPurple, Math.random());
+      } else if (rng < 0.8) {
+        mixedColor = colorIndigo.clone().lerp(colorTeal, Math.random());
+      } else {
+        mixedColor = new THREE.Color('#1e293b'); // faint background star
+      }
+
+      colors[i * 3] = mixedColor.r;
+      colors[i * 3 + 1] = mixedColor.g;
+      colors[i * 3 + 2] = mixedColor.b;
     }
 
-    const handleMouseMove = (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const handleMouseLeave = () => {
-      mouse.x = null;
-      mouse.y = null;
+    const material = new THREE.PointsMaterial({
+      size: 9,
+      map: particleTexture,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      vertexColors: true,
+    });
+
+    const particleSystem = new THREE.Points(geometry, material);
+    scene.add(particleSystem);
+
+    // 4. Central Holographic Engine Globe (Outer)
+    const globeGeometry = new THREE.IcosahedronGeometry(200, 2);
+    const globeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x6366f1,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.12,
+      blending: THREE.AdditiveBlending,
+    });
+    const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+    scene.add(globe);
+
+    // Central Holographic Engine Globe (Inner)
+    const innerGlobeGeometry = new THREE.IcosahedronGeometry(100, 1);
+    const innerGlobeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.08,
+      blending: THREE.AdditiveBlending,
+    });
+    const innerGlobe = new THREE.Mesh(innerGlobeGeometry, innerGlobeMaterial);
+    scene.add(innerGlobe);
+
+    // 5. Holographic Grid Helper
+    const gridHelper = new THREE.GridHelper(1300, 32, 0x6366f1, 0x1f2937);
+    gridHelper.position.y = -320;
+    gridHelper.material.opacity = 0.16;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // 6. Interactive Mouse coordinates
+    const mouse = { x: 0, y: 0 };
+    const target = { x: 0, y: 0 };
+    
+    const handleMouseMove = (event) => {
+      // Transform client coords to normalized device coords [-1, 1]
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseleave', handleMouseLeave);
 
-    // Main animation draw loop
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        p1.x += p1.vx;
-        p1.y += p1.vy;
-
-        // Bounce walls
-        if (p1.x < 0 || p1.x > canvas.width) p1.vx *= -1;
-        if (p1.y < 0 || p1.y > canvas.height) p1.vy *= -1;
-
-        // Draw node particle
-        ctx.beginPath();
-        ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p1.color;
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = p1.color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Connect nearby particles
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-
-          if (dist < connectionDistance) {
-            const alpha = (1 - dist / connectionDistance) * 0.12;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(129, 140, 248, ${alpha})`;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-          }
-        }
-
-        // Pull towards mouse cursor when hovering close
-        if (mouse.x !== null && mouse.y !== null) {
-          const mDist = Math.hypot(p1.x - mouse.x, p1.y - mouse.y);
-          if (mDist < mouse.radius) {
-            const alpha = (1 - mDist / mouse.radius) * 0.22;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            
-            // Soft magnet gravitational pull
-            p1.x += (mouse.x - p1.x) * 0.004;
-            p1.y += (mouse.y - p1.y) * 0.004;
-          }
-        }
-      }
-
-      animationFrameId = requestAnimationFrame(draw);
+    // 7. Window resize handler
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
     };
 
-    draw();
+    window.addEventListener('resize', handleResize);
 
+    // 8. Main loop
+    let animationFrameId;
+    const clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // Slow rotational drift
+      particleSystem.rotation.y = elapsedTime * 0.012;
+      particleSystem.rotation.x = elapsedTime * 0.004;
+
+      globe.rotation.y = -elapsedTime * 0.025;
+      globe.rotation.x = elapsedTime * 0.008;
+
+      innerGlobe.rotation.y = elapsedTime * 0.055;
+      innerGlobe.rotation.z = -elapsedTime * 0.018;
+
+      // Parallax effect on camera
+      target.x = mouse.x * 130;
+      target.y = mouse.y * 130;
+
+      camera.position.x += (target.x - camera.position.x) * 0.05;
+      camera.position.y += (target.y - camera.position.y) * 0.05;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // 9. WebGL resource disposal to avoid memory leaks
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
+
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      particleTexture.dispose();
+      globeGeometry.dispose();
+      globeMaterial.dispose();
+      innerGlobeGeometry.dispose();
+      innerGlobeMaterial.dispose();
+      gridHelper.geometry.dispose();
+      gridHelper.material.dispose();
+      renderer.dispose();
     };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       style={{
         position: 'absolute',
         top: 0,
@@ -130,6 +218,8 @@ export const AnimatedBackground = () => {
         height: '100%',
         pointerEvents: 'none',
         zIndex: 0,
+        overflow: 'hidden',
+        background: '#030712'
       }}
     />
   );
