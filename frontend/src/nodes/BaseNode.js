@@ -16,6 +16,7 @@ export const BaseNode = ({
 }) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const updateNodeField = useStore((state) => state.updateNodeField);
+  const deleteNode = useStore((state) => state.deleteNode);
 
   // Retrieve custom ports from Zustand store
   const nodeData = useStore((state) => state.nodes.find((n) => n.id === id)?.data);
@@ -83,13 +84,25 @@ export const BaseNode = ({
   const handleRemoveOutput = (portId) => {
     updateNodeField(id, 'customOutputs', customOutputs.filter((port) => port.id !== portId));
   };
+  
+  const handleDelete = () => {
+    deleteNode(id);
+  };
 
   return (
     <div className={`base-node ${className}`} style={style}>
       {/* Header section */}
       <div className="node-header">
-        {icon && <span className="node-icon">{icon}</span>}
-        <span className="node-title">{title}</span>
+        <div className="node-header-title-container">
+          {icon && <span className="node-icon">{icon}</span>}
+          <span className="node-title">{title}</span>
+        </div>
+        <button onClick={handleDelete} className="delete-node-btn" type="button" title="Delete Node">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
 
       {/* Main node content */}

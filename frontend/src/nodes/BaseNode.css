@@ -30,6 +30,7 @@
 .node-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
   background: #1f2937;
@@ -37,6 +38,30 @@
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   user-select: none;
+}
+
+.node-header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-node-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.delete-node-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .node-icon {
