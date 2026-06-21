@@ -1,5 +1,6 @@
-import React from 'react';
-import { Handle } from 'reactflow';
+import React, { useEffect } from 'react';
+import { Handle, useUpdateNodeInternals, Position } from 'reactflow';
+import { useStore } from '../store';
 import './BaseNode.css';
 
 export const BaseNode = ({
@@ -13,6 +14,76 @@ export const BaseNode = ({
   className = '',
   isConnectable = true,
 }) => {
+  const updateNodeInternals = useUpdateNodeInternals();
+  const updateNodeField = useStore((state) => state.updateNodeField);
+
+  // Retrieve custom ports from Zustand store
+  const nodeData = useStore((state) => state.nodes.find((n) => n.id === id)?.data);
+  const customInputs = nodeData?.customInputs || [];
+  const customOutputs = nodeData?.customOutputs || [];
+
+  // Update React Flow internals whenever handle lengths change
+  useEffect(() => {
+    updateNodeInternals(id);
+  }, [id, inputs.length, outputs.length, customInputs.length, customOutputs.length, updateNodeInternals]);
+
+  // Combine default inputs with user custom inputs, calculating even vertical distribution
+  const totalInputs = inputs.length + customInputs.length;
+  const mergedInputs = [
+    ...inputs.map((input, idx) => ({
+      ...input,
+      style: { top: `${((idx + 1) * 100) / (totalInputs + 1)}%` },
+    })),
+    ...customInputs.map((ci, idx) => ({
+      id: ci.id,
+      position: Position.Left,
+      style: { top: `${((inputs.length + idx + 1) * 100) / (totalInputs + 1)}%` },
+      label: ci.label,
+    }))
+  ];
+
+  // Combine default outputs with user custom outputs, calculating even vertical distribution
+  const totalOutputs = outputs.length + customOutputs.length;
+  const mergedOutputs = [
+    ...outputs.map((output, idx) => ({
+      ...output,
+      style: { top: `${((idx + 1) * 100) / (totalOutputs + 1)}%` },
+    })),
+    ...customOutputs.map((co, idx) => ({
+      id: co.id,
+      position: Position.Right,
+      style: { top: `${((outputs.length + idx + 1) * 100) / (totalOutputs + 1)}%` },
+      label: co.label,
+    }))
+  ];
+
+  // Action Handlers
+  const handleAddInput = () => {
+    const nextIdx = customInputs.length + 1;
+    const newPort = {
+      id: `${id}-custom-in-${Date.now()}`,
+      label: `In ${nextIdx}`,
+    };
+    updateNodeField(id, 'customInputs', [...customInputs, newPort]);
+  };
+
+  const handleRemoveInput = (portId) => {
+    updateNodeField(id, 'customInputs', customInputs.filter((port) => port.id !== portId));
+  };
+
+  const handleAddOutput = () => {
+    const nextIdx = customOutputs.length + 1;
+    const newPort = {
+      id: `${id}-custom-out-${Date.now()}`,
+      label: `Out ${nextIdx}`,
+    };
+    updateNodeField(id, 'customOutputs', [...customOutputs, newPort]);
+  };
+
+  const handleRemoveOutput = (portId) => {
+    updateNodeField(id, 'customOutputs', customOutputs.filter((port) => port.id !== portId));
+  };
+
   return (
     <div className={`base-node ${className}`} style={style}>
       {/* Header section */}
@@ -24,10 +95,45 @@ export const BaseNode = ({
       {/* Main node content */}
       <div className="node-content">
         {children}
+
+        {/* Dynamic connection points controller UI */}
+        <div className="custom-ports-section">
+          <div className="custom-ports-header">
+            <span>Custom Ports</span>
+            <div className="custom-ports-actions">
+              <button onClick={handleAddInput} className="add-port-btn" type="button">+ Input</button>
+              <button onClick={handleAddOutput} className="add-port-btn" type="button">+ Output</button>
+            </div>
+          </div>
+          
+          {/* Lists of currently active custom ports with deletion options */}
+          {(customInputs.length > 0 || customOutputs.length > 0) && (
+            <div className="custom-ports-list">
+              {customInputs.map((ci) => (
+                <div key={ci.id} className="custom-port-item">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="port-dot input-dot"></span>
+                    <span className="port-label">{ci.label}</span>
+                  </div>
+                  <button onClick={() => handleRemoveInput(ci.id)} className="remove-port-btn" type="button">&times;</button>
+                </div>
+              ))}
+              {customOutputs.map((co) => (
+                <div key={co.id} className="custom-port-item">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="port-dot output-dot"></span>
+                    <span className="port-label">{co.label}</span>
+                  </div>
+                  <button onClick={() => handleRemoveOutput(co.id)} className="remove-port-btn" type="button">&times;</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Target (input) Handles */}
-      {inputs.map((input) => (
+      {mergedInputs.map((input) => (
         <div key={input.id} className="handle-container input-handle-container" style={input.style}>
           <Handle
             type="target"
@@ -45,7 +151,7 @@ export const BaseNode = ({
       ))}
 
       {/* Source (output) Handles */}
-      {outputs.map((output) => (
+      {mergedOutputs.map((output) => (
         <div key={output.id} className="handle-container output-handle-container" style={output.style}>
           <Handle
             type="source"
