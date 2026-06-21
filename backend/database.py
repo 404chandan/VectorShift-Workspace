@@ -16,7 +16,8 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/vectorshift")
 
 # Initialize MongoDB Client
 client = MongoClient(MONGO_URI)
-db = client.get_database()
+# Use 'vectorshift' as default database name if none is defined in the connection URI
+db = client.get_database("vectorshift")
 
 # Collections
 users_col = db["users"]
