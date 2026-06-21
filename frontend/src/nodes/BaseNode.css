@@ -132,6 +132,14 @@
   height: 1px;
 }
 
+.input-handle-container {
+  left: 0;
+}
+
+.output-handle-container {
+  right: 0;
+}
+
 .handle-label {
   position: absolute;
   font-size: 9px;

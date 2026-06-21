@@ -28,12 +28,11 @@ export const BaseNode = ({
 
       {/* Target (input) Handles */}
       {inputs.map((input) => (
-        <div key={input.id} className="handle-container input-handle-container">
+        <div key={input.id} className="handle-container input-handle-container" style={input.style}>
           <Handle
             type="target"
             position={input.position}
             id={input.id}
-            style={input.style}
             className={`custom-handle input-handle ${input.className || ''}`}
             isConnectable={input.isConnectable !== undefined ? input.isConnectable : isConnectable}
           />
@@ -47,12 +46,11 @@ export const BaseNode = ({
 
       {/* Source (output) Handles */}
       {outputs.map((output) => (
-        <div key={output.id} className="handle-container output-handle-container">
+        <div key={output.id} className="handle-container output-handle-container" style={output.style}>
           <Handle
             type="source"
             position={output.position}
             id={output.id}
-            style={output.style}
             className={`custom-handle output-handle ${output.className || ''}`}
             isConnectable={output.isConnectable !== undefined ? output.isConnectable : isConnectable}
           />
