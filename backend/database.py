@@ -71,7 +71,8 @@ def create_user(email: str, password: str, name: str):
         "created_at": datetime.utcnow()
     }
     result = users_col.insert_one(user)
-    user["_id"] = str(result.inserted_id)
+    user["id"] = str(result.inserted_id)
+    user.pop("_id", None)
     # Remove password from return object
     user.pop("password", None)
     return user

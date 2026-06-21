@@ -14,7 +14,8 @@ export const SubmitButton = () => {
       const formData = new FormData();
       formData.append('pipeline', JSON.stringify({ nodes, edges }));
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/pipelines/parse`, {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/pipelines/parse`, {
         method: 'POST',
         body: formData,
       });
