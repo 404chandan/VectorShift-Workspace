@@ -13,24 +13,24 @@ export const SubmitButton = () => {
     try {
       const formData = new FormData();
       formData.append('pipeline', JSON.stringify({ nodes, edges }));
-      
-      const response = await fetch('http://localhost:8000/pipelines/parse', {
+
+      const response = await fetch('https://vectorshift-workspace.onrender.com/pipelines/parse', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Server returned an error');
       }
-      
+
       const data = await response.json();
       setResult(data);
       setModalOpen(true);
-      
+
       // Also trigger a standard window alert as requested by instructions
       const dagText = data.is_dag ? 'is a Directed Acyclic Graph (DAG)' : 'contains cycles (is NOT a DAG)';
       alert(`Pipeline Summary:\n- Nodes: ${data.num_nodes}\n- Edges: ${data.num_edges}\n- DAG Status: ${dagText}`);
-      
+
     } catch (error) {
       console.error(error);
       alert('Error calling backend parser: ' + error.message);
@@ -42,8 +42,8 @@ export const SubmitButton = () => {
   return (
     <>
       <div className="submit-container">
-        <button 
-          onClick={handleSubmit} 
+        <button
+          onClick={handleSubmit}
           disabled={loading}
           className="submit-btn"
         >
@@ -72,12 +72,12 @@ export const SubmitButton = () => {
                 <div className={`dag-badge ${result.is_dag ? 'success' : 'danger'}`}>
                   {result.is_dag ? (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                       <span>Valid DAG (No Cycles)</span>
                     </>
                   ) : (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                       <span>Cyclic Graph Detected</span>
                     </>
                   )}
